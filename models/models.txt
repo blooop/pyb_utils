@@ -1,0 +1,6 @@
+mesh models created with free and open source CAD package solvespace: 
+https://solvespace.com/index.pl
+https://github.com/solvespace/solvespace
+
+.slvs models exported to .obj for pybullet to read.
+
