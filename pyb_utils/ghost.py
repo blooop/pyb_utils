@@ -3,7 +3,7 @@
 import numpy as np
 import pybullet as pyb
 from math import sqrt
-
+from typing import List, Tuple
 
 from .math import quaternion_rotate, quaternion_multiply
 
@@ -149,16 +149,28 @@ class GhostObject:
             client_id=client_id,
         )
 
+    @staticmethod
+    def arrow_orientation(
+        direction: List[float],
+    ):
+        # the arrow points in the x direction in the .obj file
+        model_dir = [1.0, 0.0, 0.0]
+        v1 = np.cross(model_dir, direction)
+        v1_mag = np.linalg.norm(v1)
+        w = sqrt(v1_mag * v1_mag) + np.dot(model_dir, direction)
+        return [v1[0], v1[1], v1[2], w]
+
     @classmethod
     def arrow(
         cls,
-        position,
-        direction,
-        half_extents,
-        parent_body_uid=None,
-        parent_link_index=-1,
-        color=(1, 0, 0, 1),
-        client_id=0,
+        position: List[float],
+        direction: List[float],
+        center: float = 1.0,
+        radius: float = 0.1,
+        parent_body_uid: int = None,
+        parent_link_index: int = -1,
+        color: Tuple[float] = (1, 1, 1, 1),
+        client_id: int = 0,
     ):
         """Create a cuboid ghost.
 
@@ -166,8 +178,12 @@ class GhostObject:
         ----------
         position : iterable
             The `(x, y, z)` position of the box in the world.
-        half_extents : iterable
-            The three half lengths of the box.
+        direction : iterable
+            The direction and size of the arrow.  The length of the arrow is set from the magnitude of the vector. A unit vector results in an arrow 1m long
+        center : float
+            The center point of the arrow.  If the center=0, the arrow is symmetric about position. If center=1, the position defines the base of the arrow. If center=-1 the tip of the arrow is conincident with position.
+        radius : float
+            The radius of the arrow in meters.
         parent_body_uid : int
             The UID of an existing body to "attach" this object to (optional).
         parent_link_index : int
@@ -178,30 +194,23 @@ class GhostObject:
         """
         pyb.setAdditionalSearchPath("/home/host_user/work/src/arrows")
 
-        # the arrow points in the x direction in the .obj file
-        model_dir = [1.0, 0.0, 0.0]
+        direction_mag = np.linalg.norm(direction)
+        scale = 1.0
 
-        # direction_mag = np.linalg.norm(direction)
-
-        mesh_scale = np.array([0.01, 0.01, 0.01])
-        v1 = np.cross(model_dir, direction)
-        v1_mag = np.linalg.norm(v1)
-        w = sqrt(v1_mag * v1_mag) + np.dot(model_dir, direction)
+        print(direction_mag)
 
         visual_uid = pyb.createVisualShape(
             shapeType=pyb.GEOM_MESH,
             fileName="arrow3d.obj",
-            meshScale=[0.01, 0.01, 0.01],
-            visualFramePosition=[-0.01, 0, 0],
+            meshScale=[direction_mag * scale, radius, radius],
+            visualFramePosition=[(direction_mag * center * scale) / 2.0, 0, 0],
             rgbaColor=tuple(color),
         )
-
-        quat = [v1[0], v1[1], v1[2], w]
 
         return cls(
             visual_uid,
             position=position,
-            orientation=quat,
+            orientation=GhostObject.arrow_orientation(direction),
             parent_body_uid=parent_body_uid,
             parent_link_index=parent_link_index,
             client_id=client_id,
