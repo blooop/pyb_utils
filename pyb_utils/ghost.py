@@ -166,7 +166,7 @@ class GhostObject:
         position: List[float],
         direction: List[float],
         center: float = 1.0,
-        radius: float = 0.1,
+        radius: float = 1.,
         parent_body_uid: int = None,
         parent_link_index: int = -1,
         color: Tuple[float] = (1, 1, 1, 1),
@@ -192,17 +192,16 @@ class GhostObject:
         color : iterable
             The `(r, g, b, α)` color of the box.
         """
-        pyb.setAdditionalSearchPath("/home/host_user/work/src/arrows")
-
         direction_mag = np.linalg.norm(direction)
         scale = 1.0
-
-        print(direction_mag)
-
         visual_uid = pyb.createVisualShape(
             shapeType=pyb.GEOM_MESH,
             fileName="arrow3d.obj",
-            meshScale=[direction_mag * scale, radius, radius],
+            meshScale=[
+                direction_mag * scale,
+                direction_mag * radius,
+                direction_mag * radius,
+            ],
             visualFramePosition=[(direction_mag * center * scale) / 2.0, 0, 0],
             rgbaColor=tuple(color),
         )
