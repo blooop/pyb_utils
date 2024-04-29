@@ -14,5 +14,5 @@
 			]
 		}
 	},	
-	"postCreateCommand": "poetry install",
+	"postCreateCommand": "pip install -e .",
 }
