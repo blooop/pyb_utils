@@ -1,6 +1,10 @@
 """This module provides a simple wrapper for a velocity- or torque-controlled
 robot."""
+
+from typing import List
 import numpy as np
+from numpy.typing import NDArray
+
 import pybullet as pyb
 
 from .named_tuples import getJointInfo, getJointStates, getLinkState
@@ -537,3 +541,59 @@ class Robot:
         return self.compute_link_jacobian(
             q=q, link_idx=link_idx, offset=state.localInertialFramePosition
         )
+
+    def get_joint_limits(self) -> tuple[np.ndarray, np.ndarray]:
+        lower = np.empty(len(self._actuated_joint_indices))
+        upper = np.empty(len(self._actuated_joint_indices))
+        for i, joint in enumerate(self._actuated_joint_indices):
+            info = getJointInfo(self.uid, joint, physicsClientId=self.client_id)
+            lower[i] = info.jointLowerLimit
+            upper[i] = info.jointUpperLimit
+        return lower, upper
+
+    def get_random_joints(self) -> np.ndarray:
+        lower, upper = self.get_joint_limits
+        return np.random.uniform()
+
+    def calculate_inverse_kinematics(
+        self,
+        position: List[float],
+        orientation: List[float],
+        lower_limits: List[float] = None,
+        upper_limits: List[float] = None,
+        joint_ranges: list[float] = None,
+        rest_poses: list[float] = None,
+        joint_damping: list[float] = None,
+        current_position: list[float] = None,
+    ):
+        """Calculate the inverse kinematics of the robot
+
+        Args:
+            position (List[float]): _description_
+            orientation (List[float]): _description_
+            # lower_limits (List[float], optional): the lower limits of the robots' joints. Defaults to None.
+            # upper_limits (List[float], optional): the upper limits of the robots' joints. Defaults to None.
+            # joint_ranges (list[float], optional): _description_. Defaults to None.
+            # rest_poses (list[float], optional): _description_. Defaults to None.
+            # joint_damping (list[float], optional): _description_. Defaults to None.
+            current_position (list[float], optional): _description_. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
+        return pyb.calculateInverseKinematics(
+            self.uid,
+            self.tool_idx,
+            position,
+            orientation,
+            residualThreshold=0.001,
+            maxNumIterations=30,
+            # lower_limits,
+            # upper_limits,
+            # joint_ranges,
+            # rest_poses,
+            # currentPosition=current_position,
+            # physicsClientId=self.client_id,
+        )
+
+    # def
